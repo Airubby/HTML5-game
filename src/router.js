@@ -14,7 +14,7 @@ export default new Router({
       component: () => import('./views/Home.vue')
     },
     {
-      path: '/',
+      path: '/GameOne',
       name: 'one',
       component: () => import('./views/GameOne.vue')
     }

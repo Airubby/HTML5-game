@@ -47,16 +47,16 @@ module.exports = {
         https: false,
         hotOnly: false,
         // 设置代理
-        proxy: {
-            // '/api': {
-            // target: 'https://cnodejs.org', // 你接口的域名
-            //     secure: false,
-            //     changeOrigin: true,
-            //     pathRewrite:{
-            //     '^/api':'/api/v1/'
-            //     }
-		    // }
-        },
+        // proxy: {
+        //     // '/api': {
+        //     // target: 'https://cnodejs.org', // 你接口的域名
+        //     //     secure: false,
+        //     //     changeOrigin: true,
+        //     //     pathRewrite:{
+        //     //     '^/api':'/api/v1/'
+        //     //     }
+		//     // }
+        // },
         before: app => {
         }
     },
