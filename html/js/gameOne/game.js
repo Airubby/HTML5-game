@@ -185,7 +185,14 @@ var game={
 				// and load next hero 加载下一个英雄
 				game.mode = "load-next-hero";
 			}
-		}
+        }
+        if(game.mode=="level-success" || game.mode=="level-failure"){		
+            if(game.panTo(0)){
+                game.ended = true;					
+                game.showEndingScreen();
+            }			 
+        }
+        
     },
     animate:function(){
         // 移动背景
@@ -253,6 +260,23 @@ var game={
 		var distanceSquared = Math.pow(position.x*box2d.scale - mouse.x-game.offsetLeft,2) + Math.pow(position.y*box2d.scale-mouse.y,2);
 		var radiusSquared = Math.pow(game.currentHero.GetUserData().radius,2);		
 		return (distanceSquared<= radiusSquared);	
+    },
+    showEndingScreen:function(){
+		//game.stopBackgroundMusic();				
+		if (game.mode=="level-success"){			
+			if(game.currentLevel.number<levels.data.length-1){
+				$('#endingmessage').html('Level Complete. Well Done!!!');
+				$("#playnextlevel").show();
+			} else {
+				$('#endingmessage').html('All Levels Complete. Well Done!!!');
+				$("#playnextlevel").hide();
+			}
+		} else if (game.mode=="level-failure"){			
+			$('#endingmessage').html('Failed. Play Again?');
+			$("#playnextlevel").hide();
+		}		
+
+		$('#endingscreen').show();
 	},
 
 }
