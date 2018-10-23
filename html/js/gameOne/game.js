@@ -162,26 +162,14 @@ var game={
     drawAllBodies:function(){  
 		box2d.world.DrawDebugData();	
 
-		// Iterate through all the bodies and draw them on the game canvas	 遍历所有物体在canvas中绘制		  
-		// for (var body = box2d.world.GetBodyList(); body; body = body.GetNext()) {
-		// 	var entity = body.GetUserData();
+		//Iterate through all the bodies and draw them on the game canvas	 遍历所有物体在canvas中绘制		  
+		for (var body = box2d.world.GetBodyList(); body; body = body.GetNext()) {
+			var entity = body.GetUserData();
   
-		// 	if(entity){
-		// 		var entityX = body.GetPosition().x*box2d.scale;
-		// 		if(entityX<0|| entityX>game.currentLevel.foregroundImage.width||(entity.health && entity.health <0)){
-		// 			box2d.world.DestroyBody(body);
-		// 			if (entity.type=="villain"){
-		// 				game.score += entity.calories;
-		// 				$('#score').html('Score: '+game.score);
-		// 			}
-		// 			if (entity.breakSound){
-		// 				entity.breakSound.play();
-		// 			}
-		// 		} else {
-		// 			entities.draw(entity,body.GetPosition(),body.GetAngle())				
-		// 		}	
-		// 	}
-		// }
+			if(entity){
+				entities.draw(entity,body.GetPosition(),body.GetAngle())
+			}
+		}
 	},
 
 }
@@ -486,7 +474,31 @@ var entities = {
     // take the entity, its position and angle and draw it on the game canvas
     //以物体、物体的位置和角度做参数，在游戏画面中绘制物体
 	draw:function(entity,position,angle){
-		
+		game.context.translate(position.x*box2d.scale-game.offsetLeft,position.y*box2d.scale);
+		game.context.rotate(angle);
+		switch (entity.type){
+			case "block":
+				game.context.drawImage(entity.sprite,0,0,entity.sprite.width,entity.sprite.height,
+						-entity.width/2-1,-entity.height/2-1,entity.width+2,entity.height+2);	
+			break;
+			case "villain":
+			case "hero": 
+				if (entity.shape=="circle"){
+					game.context.drawImage(entity.sprite,0,0,entity.sprite.width,entity.sprite.height,
+							-entity.radius-1,-entity.radius-1,entity.radius*2+2,entity.radius*2+2);	
+				} else if (entity.shape=="rectangle"){
+					game.context.drawImage(entity.sprite,0,0,entity.sprite.width,entity.sprite.height,
+							-entity.width/2-1,-entity.height/2-1,entity.width+2,entity.height+2);
+				}
+				break;				
+			case "ground":
+                // do nothing... We will draw objects like the ground & slingshot separately
+                //什么都不做，我们单独绘制地面和弹弓
+				break;
+		}
+
+		game.context.rotate(-angle);
+		game.context.translate(-position.x*box2d.scale+game.offsetLeft,-position.y*box2d.scale);
 	}
 
 }
@@ -500,6 +512,15 @@ var box2d = {
 		var allowSleep = true; //Allow objects that are at rest to fall asleep and be excluded from calculations 物体休眠不参与计算
 		box2d.world = new b2World(gravity,allowSleep);
 
+        // Setup debug draw 设置调试绘画
+		var debugContext = document.getElementById('debugcanvas').getContext('2d');
+		var debugDraw = new b2DebugDraw();
+		debugDraw.SetSprite(debugContext);
+		debugDraw.SetDrawScale(box2d.scale);
+		debugDraw.SetFillAlpha(0.3);
+		debugDraw.SetLineThickness(1.0);
+		debugDraw.SetFlags(b2DebugDraw.e_shapeBit | b2DebugDraw.e_jointBit);	
+		box2d.world.SetDebugDraw(debugDraw);
 		
 	},  
 	
