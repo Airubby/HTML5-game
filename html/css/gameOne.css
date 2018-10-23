@@ -3,6 +3,7 @@
     height:480px;
     background: url(../images/gameOne/splashscreen.png);
     border: 1px solid black;
+    margin:0 auto;
   }
 
   .gamelayer {

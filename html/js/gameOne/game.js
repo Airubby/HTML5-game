@@ -137,10 +137,17 @@ var game={
     },
     animate:function(){
         // 移动背景
-       game.handlePanning();
+        game.handlePanning();
        
-       // 使角色移动
-     	
+        // 使角色移动
+     	// Animate the characters
+        var currentTime = new Date().getTime();
+        var timeStep;
+        if (game.lastUpdateTime){
+            timeStep = (currentTime - game.lastUpdateTime)/1000;
+            box2d.step(timeStep);
+        } 
+        game.lastUpdateTime = currentTime;
         
         //  使用视差滚动绘制背景
         game.context.drawImage(game.currentLevel.backgroundImage,game.offsetLeft/4,0,640,480,0,0,640,480);
@@ -523,7 +530,14 @@ var box2d = {
 		box2d.world.SetDebugDraw(debugDraw);
 		
 	},  
-	
+	step:function(timeStep){
+		// velocity iterations = 8
+        // position iterations = 3
+        if(timeStep>2/60){  //限制时间
+            timeStep=2/60
+        }
+		box2d.world.Step(timeStep,8,3); //推荐时间和位置为8,3
+	},
 	createRectangle:function(entity,definition){
         var bodyDef = new b2BodyDef;
         if(entity.isStatic){
