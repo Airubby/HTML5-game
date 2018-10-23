@@ -27,6 +27,12 @@ function init(){
 	createComplexBody();
 	// Join two bodies using a revolute joint  将两个物体用转动关节连接起来
 	createRevoluteJoint();
+	// Create a body with special user data  创建具有自定义用户数据的对象
+	createSpecialBody();	
+
+	// Create contact listeners and track events  创建接触监听器并追踪事件
+	listenForContact();
+	
 
 	setupDebugDraw();
 	animate();
@@ -90,17 +96,17 @@ function animate(){
 
 	world.DrawDebugData();
 
-	// // Custom Drawing
-	// if (specialBody){
-	// 	drawSpecialBody();
-	// }
+	// Custom Drawing  自定义绘制
+	if (specialBody){
+		drawSpecialBody();
+	}
 
-	// //Kill Special Body if Dead
-	// if (specialBody && specialBody.GetUserData().life<=0){
-	// 	world.DestroyBody(specialBody);
-	// 	specialBody = undefined;
-	// 	console.log("The special body was destroyed");
-	// }
+	//Kill Special Body if Dead  摧毁耗尽生命值的物体
+	if (specialBody && specialBody.GetUserData().life<=0){
+		world.DestroyBody(specialBody);
+		specialBody = undefined;
+		console.log("The special body was destroyed");
+	}
 
 	setTimeout(animate, timeStep);
 }
@@ -249,4 +255,79 @@ function createRevoluteJoint(){
 
 	jointDef.Initialize(body1, body2, jointCenter);
 	world.CreateJoint(jointDef);	
+}
+
+var specialBody;
+function createSpecialBody(){
+	var bodyDef = new b2BodyDef;
+	bodyDef.type = b2Body.b2_dynamicBody;
+	bodyDef.position.x = 450/scale;
+	bodyDef.position.y = 0/scale;	
+	
+	specialBody = world.CreateBody(bodyDef);
+	specialBody.SetUserData({name:"special",life:250}) //传入自定义属性name和life
+	
+	//Create a fixture to attach a circular shape to the body //创建第一个载具并为物体添加圆形状
+	var fixtureDef = new b2FixtureDef;
+	fixtureDef.density = 1.0;
+	fixtureDef.friction = 0.5;
+	fixtureDef.restitution = 0.5;
+	
+	fixtureDef.shape = new b2CircleShape(30/scale);
+	
+	var fixture = specialBody.CreateFixture(fixtureDef);
+}
+
+function listenForContact(){
+	var listener = new Box2D.Dynamics.b2ContactListener;
+	listener.PostSolve = function(contact,impulse){ //重写PostSolve方法
+		var body1 = contact.GetFixtureA().GetBody();
+		var body2 = contact.GetFixtureB().GetBody();
+
+		// If either of the bodies is the special body, reduce its life
+		//如果两个物体都有生命值，减少其生命值
+		if (body1 == specialBody || body2 == specialBody){
+			var impulseAlongNormal = impulse.normalImpulses[0];
+			specialBody.GetUserData().life -= impulseAlongNormal;
+			console.log("The special body was in a collision with impulse", impulseAlongNormal,"and its life has now become ",specialBody.GetUserData().life);
+		}	
+	};
+	world.SetContactListener(listener);
+}
+
+function drawSpecialBody(){
+	// Get body position and angle 获取body的位置和角度
+	var position = specialBody.GetPosition();
+	var angle = specialBody.GetAngle();
+
+	// Translate and rotate axis to body position and angle 移动并旋转物体
+	context.translate(position.x*scale,position.y*scale);
+	context.rotate(angle);
+	
+	// Draw a filled circular face  绘制实心的圆面
+	context.fillStyle = "rgb(200,150,250);";
+	context.beginPath();
+	context.arc(0,0,30,0,2*Math.PI,false);
+	context.fill();	
+	
+	// Draw two rectangular eyes  绘制两个矩形的眼睛
+	context.fillStyle = "rgb(255,255,255);";
+	context.fillRect(-15,-15,10,5);
+	context.fillRect(5,-15,10,5);
+	
+	// Draw an upward or downward arc for a smile depending on life
+	//绘制向上或向下的圆弧，根据生命值决定是否微笑
+	context.strokeStyle = "rgb(255,255,255);";
+	context.beginPath();
+	if (specialBody.GetUserData().life>100){
+		context.arc(0,0,10,Math.PI,2*Math.PI,true);
+	} else {
+		context.arc(0,10,10,Math.PI,2*Math.PI,false);
+	}
+	context.stroke();
+	
+	// Translate and rotate axis back to original position and angle
+	//移动并旋转坐标轴至最初的位置和角度
+	context.rotate(-angle);
+	context.translate(-position.x*scale,-position.y*scale);
 }
