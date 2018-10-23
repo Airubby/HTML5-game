@@ -111,7 +111,15 @@ var game={
         }       
 
         if(game.mode=="wait-for-firing"){  
-            game.panTo(game.slingshotX);
+            if (mouse.dragging){
+				if (game.mouseOnCurrentHero()){
+					game.mode = "firing";
+				} else {
+					game.panTo(mouse.x + game.offsetLeft)
+				}
+			} else {
+				game.panTo(game.slingshotX);
+			}
         }
 		
 		if (game.mode=="load-next-hero"){
@@ -146,12 +154,37 @@ var game={
 		}
 		
 		if(game.mode == "firing"){  
-            game.panTo(game.slingshotX);
+            if(mouse.down){
+				game.panTo(game.slingshotX);				
+				game.currentHero.SetPosition({x:(mouse.x+game.offsetLeft)/box2d.scale,y:mouse.y/box2d.scale});
+			} else {
+				game.mode = "fired";
+				//game.slingshotReleasedSound.play();								
+				var impulseScaleFactor = 0.75;
+				
+				// Coordinates of center of slingshot (where the band is tied to slingshot)
+				var slingshotCenterX = game.slingshotX + 35;
+				var slingshotCenterY = game.slingshotY+25;
+				var impulse = new b2Vec2((slingshotCenterX -mouse.x-game.offsetLeft)*impulseScaleFactor,(slingshotCenterY-mouse.y)*impulseScaleFactor);
+				game.currentHero.ApplyImpulse(impulse,game.currentHero.GetWorldCenter());
+
+			}
         }
         
 		if (game.mode == "fired"){
 			// 待完成: 
-			// 视野移到英雄当前位置
+            // 视野移到英雄当前位置  跟随当前英雄移动画面
+            var heroX = game.currentHero.GetPosition().x*box2d.scale;
+			game.panTo(heroX);
+
+			//and wait till he stops moving  or is out of bounds  直到英雄停止移动或者移出边界
+			if(!game.currentHero.IsAwake() || heroX<0 || heroX >game.currentLevel.foregroundImage.width ){
+				// then delete the old hero 删除旧的英雄
+				box2d.world.DestroyBody(game.currentHero);
+				game.currentHero = undefined;
+				// and load next hero 加载下一个英雄
+				game.mode = "load-next-hero";
+			}
 		}
     },
     animate:function(){
@@ -210,6 +243,16 @@ var game={
 				}
 			}
 		}
+    },
+    mouseOnCurrentHero:function(){
+		if(!game.currentHero){
+			return false;
+        }
+        //英雄中心与鼠标的距离小于英雄半径，鼠标就悬停在英雄上
+		var position = game.currentHero.GetPosition();
+		var distanceSquared = Math.pow(position.x*box2d.scale - mouse.x-game.offsetLeft,2) + Math.pow(position.y*box2d.scale-mouse.y,2);
+		var radiusSquared = Math.pow(game.currentHero.GetUserData().radius,2);		
+		return (distanceSquared<= radiusSquared);	
 	},
 
 }
