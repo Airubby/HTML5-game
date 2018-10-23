@@ -111,19 +111,38 @@ var game={
         }       
 
         if(game.mode=="wait-for-firing"){  
-            if (mouse.dragging){
-				game.panTo(mouse.x + game.offsetLeft)
-            } else {
-                game.panTo(game.slingshotX);
-            }
+            game.panTo(game.slingshotX);
         }
 		
 		if (game.mode=="load-next-hero"){
-			// 待完成: 
-			// 检查是否有坏蛋还活着，如果没有关卡结束（通过
-			// 检查是否有可装填英雄，如果没有关卡结束（失败
-			// 装填英雄设置状态wait-for-firing
-			game.mode="wait-for-firing";			
+            // 待完成: 
+            game.countHeroesAndVillains();
+
+            // 检查是否有坏蛋还活着，如果没有关卡结束（通过
+            if (game.villains.length == 0){
+				game.mode = "level-success";
+				return;
+			}
+            // 检查是否有可装填英雄，如果没有关卡结束（失败
+            if (game.heroes.length == 0){
+				game.mode = "level-failure"	
+				return;		
+			}
+            // 装填英雄设置状态wait-for-firing
+            if(!game.currentHero){
+				game.currentHero = game.heroes[game.heroes.length-1];
+				game.currentHero.SetPosition({x:180/box2d.scale,y:200/box2d.scale});
+	 			game.currentHero.SetLinearVelocity({x:0,y:0});
+	 			game.currentHero.SetAngularVelocity(0);
+				game.currentHero.SetAwake(true);				
+			} else {
+                // Wait for hero to stop bouncing and fall asleep and then switch to wait-for-firing
+                //等待英雄结束弹跳并进入休眠，接着切换到wait-for-firing
+				game.panTo(game.slingshotX);
+				if(!game.currentHero.IsAwake()){
+					game.mode = "wait-for-firing";
+				}
+			}			
 		}
 		
 		if(game.mode == "firing"){  
@@ -175,6 +194,20 @@ var game={
   
 			if(entity){
 				entities.draw(entity,body.GetPosition(),body.GetAngle())
+			}
+		}
+    },
+    countHeroesAndVillains:function(){
+		game.heroes = [];
+		game.villains = [];
+		for (var body = box2d.world.GetBodyList(); body; body = body.GetNext()) {
+			var entity = body.GetUserData();
+			if(entity){
+				if(entity.type == "hero"){				
+					game.heroes.push(body);			
+				} else if (entity.type =="villain"){
+					game.villains.push(body);
+				}
 			}
 		}
 	},
